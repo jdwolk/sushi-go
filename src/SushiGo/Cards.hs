@@ -5,12 +5,15 @@ module SushiGo.Cards (
 , HandResult(..)
 , score
 , group
+, sortByCard
 ) where
 
-import           Data.List (groupBy, sort)
+import           Data.List       (groupBy, head, sort)
+import qualified Data.Map.Strict as M
 
 data Card = Sashimi
-          deriving (Eq, Ord, Show)
+          | Wasabi
+            deriving (Eq, Ord, Show)
 
 type Hand = [Card]
 type CardsToPlay = [Card]
@@ -35,11 +38,12 @@ score :: [Card] -> Int
 score [Sashimi, Sashimi, Sashimi] = 10
 score _ = 0
 
-group :: CardsToPlay -> GroupResult Card
-group cs = GroupResult { groups = [], remainder = [] }
-  where cardSets = groupBy cardTypeEq $ sort cs
+group :: CardsToPlay -> M.Map Card [Card]--GroupResult Card
+group cs = groupByCard cs
 
-cardTypeEq :: Card -> Card -> Bool
-cardTypeEq Sashimi Sashimi = True
-cardTypeEq _ _ = False
+groupByCard :: [Card] -> M.Map Card [Card]
+groupByCard cs = M.fromList zipped
+  where grouped = groupBy (==) $ sort cs
+        cards = map head grouped
+        zipped = zip cards grouped
 
