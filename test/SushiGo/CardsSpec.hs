@@ -19,7 +19,7 @@ spec = do
   describe "groupSashimi" $ do
     context "with # divisible by 3" $ do
       it "gives a groupResult with the correct groups and no remainder" $ do
-        groupSashimi [Sashimi, Sashimi, Sashimi] `shouldBe` makeGroupResult [SashimiGroup] []
+        groupSashimi [Sashimi, Sashimi, Sashimi] `shouldBe` HasGroups [SashimiGroup] []
 
 
   {-describe "group" $ do                                                                                     -}

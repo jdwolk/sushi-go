@@ -3,15 +3,16 @@ module SushiGo.Cards (
 , Group(..)
 , GroupResult(..)
 , HandResult(..)
+, WithRemainder(..)
 , score
 , group
 , groupSashimi
-, makeGroupResult
 , separateCardTypes
 ) where
 
 import           Data.List       (groupBy, head, sort)
 import qualified Data.Map.Strict as M
+import           Data.Monoid     ((<>))
 
 data Card = Sashimi
           | Wasabi
@@ -24,6 +25,7 @@ type CardsToPlay = [Card]
 data Group c = SashimiGroup
              | TempuraGroup
              | WasabiGroup { nagiri :: c }
+             | NoGroup
              deriving (Eq, Show)
 
 data HandResult = HandResult {
@@ -31,22 +33,42 @@ data HandResult = HandResult {
                 , toPass :: Hand
                 } deriving (Eq, Show)
 
+class WithRemainder gr where
+  remainder :: gr -> CardsToPlay
+
 -- TODO: make this a monoid so I can use <>
 -- to combine multiple GroupResults
-data GroupResult c = GroupResult {
-                     groups    :: [Group c]
-                   , remainder :: CardsToPlay
-                   } deriving (Eq, Show)
+data GroupResult c = HasGroups {
+                     groups      :: [Group c]
+                   , grRemainder :: CardsToPlay
+                   }
+                   | OnlyRemainder { onlyRemainder :: CardsToPlay }
+                   | NoResult
+                   deriving (Eq, Show)
 
-makeGroupResult :: [Group Card] -> CardsToPlay -> GroupResult Card
-makeGroupResult gs rdr = GroupResult { groups = gs, remainder = rdr }
+instance WithRemainder (GroupResult c) where
+  remainder (HasGroups { grRemainder = r }) = r
+  remainder (OnlyRemainder { onlyRemainder = r }) = r
+
+instance Monoid (GroupResult c) where
+  mempty = OnlyRemainder []
+  mappend (HasGroups gsA rA)
+          (HasGroups gsB rB) = HasGroups (gsA <> gsB) (rA <> rB)
+  mappend (HasGroups gs rA) (OnlyRemainder rB) = HasGroups gs (rA <> rB)
+  mappend (OnlyRemainder rA) (HasGroups gs rB) = HasGroups gs (rA <> rB)
+  mappend (OnlyRemainder rA) (OnlyRemainder rB) = OnlyRemainder (rA <> rB)
+  mappend NoResult other = other
+  mappend other NoResult = other
+  mappend _ _ = NoResult
 
 score :: [Card] -> Int
 score [Sashimi, Sashimi, Sashimi] = 10
 score _ = 0
 
 group :: CardsToPlay -> M.Map Card [Card]--GroupResult Card
-group cs = separateCardTypes cs
+group = undefined
+{-group cs = groupSashimi cs-}
+  {-where separated = separateCardTypes cs-}
 
 separateCardTypes :: [Card] -> M.Map Card [Card]
 separateCardTypes cs = M.fromList zipped
@@ -55,5 +77,7 @@ separateCardTypes cs = M.fromList zipped
         zipped = zip cards grouped
 
 groupSashimi :: CardsToPlay -> GroupResult Card
-groupSashimi = undefined
+groupSashimi cs = gsHelp cs mempty
+  where gsHelp (Sashimi:Sashimi:Sashimi:cs) gr = gsHelp cs (gr <> HasGroups [SashimiGroup] [])
+        gsHelp cs gr = gr <> OnlyRemainder cs
 
