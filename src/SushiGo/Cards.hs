@@ -6,16 +6,14 @@ module SushiGo.Cards (
 , WithRemainder(..)
 , score
 , group
-, groupSashimi
 , getCards
 , separateCardTypes
 ) where
 
-import           Data.List       (concatMap, dropWhile, groupBy, head, sort,
-                                  takeWhile)
-import qualified Data.Map.Strict as M
-import           Data.Maybe      (fromMaybe)
-import           Data.Monoid     ((<>))
+import           Data.List   (concatMap, dropWhile, groupBy, head, sort,
+                              takeWhile)
+import           Data.Maybe  (fromMaybe)
+import           Data.Monoid ((<>))
 
 data Card = Sashimi
           | Tempura
@@ -85,14 +83,13 @@ group cs = sashimiGroups
         dumplingGroups = groupDumplings $ getCards Dumpling separated
         makiGroups = groupMaki $ getCards (Maki 1) separated
 
-getCards :: Card -> M.Map Card [Card] -> [Card]
-getCards c sortedCs = fromMaybe [] $ M.lookup c sortedCs
+getCards :: Card -> [(Card, [Card])] -> [Card]
+getCards c sortedCs = fromMaybe [] $ lookup c sortedCs
 
-separateCardTypes :: [Card] -> M.Map Card [Card]
-separateCardTypes cs = M.fromList zipped
-  where grouped = groupBy (==) $ sort cs
-        cards = map head grouped
-        zipped = zip cards grouped
+separateCardTypes :: [Card] -> [(Card, [Card])]
+separateCardTypes cs = zip cards separated
+  where separated = groupBy (==) $ sort cs
+        cards = map head separated
 
 -- Sashimi groups have 3 sashimi each; rest are remainder
 groupSashimi :: CardsToPlay -> GroupResult Card
