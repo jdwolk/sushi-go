@@ -36,30 +36,23 @@ data HandResult = HandResult {
 class WithRemainder gr where
   remainder :: gr -> CardsToPlay
 
--- TODO: make this a monoid so I can use <>
--- to combine multiple GroupResults
-data GroupResult c = HasGroups {
+data GroupResult c = GroupResult {
                      groups      :: [Group c]
                    , grRemainder :: CardsToPlay
                    }
-                   | OnlyRemainder { onlyRemainder :: CardsToPlay }
                    | NoResult
                    deriving (Eq, Show)
 
 instance WithRemainder (GroupResult c) where
-  remainder (HasGroups { grRemainder = r }) = r
-  remainder (OnlyRemainder { onlyRemainder = r }) = r
+  remainder (GroupResult { grRemainder = r }) = r
+  remainder NoResult = []
 
 instance Monoid (GroupResult c) where
-  mempty = OnlyRemainder []
-  mappend (HasGroups gsA rA)
-          (HasGroups gsB rB) = HasGroups (gsA <> gsB) (rA <> rB)
-  mappend (HasGroups gs rA) (OnlyRemainder rB) = HasGroups gs (rA <> rB)
-  mappend (OnlyRemainder rA) (HasGroups gs rB) = HasGroups gs (rA <> rB)
-  mappend (OnlyRemainder rA) (OnlyRemainder rB) = OnlyRemainder (rA <> rB)
+  mempty = GroupResult [] []
+  mappend (GroupResult gsA rA)
+          (GroupResult gsB rB) = GroupResult (gsA <> gsB) (rA <> rB)
   mappend NoResult other = other
   mappend other NoResult = other
-  mappend _ _ = NoResult
 
 score :: [Card] -> Int
 score [Sashimi, Sashimi, Sashimi] = 10
@@ -78,6 +71,6 @@ separateCardTypes cs = M.fromList zipped
 
 groupSashimi :: CardsToPlay -> GroupResult Card
 groupSashimi cs = gsHelp cs mempty
-  where gsHelp (Sashimi:Sashimi:Sashimi:cs) gr = gsHelp cs (gr <> HasGroups [SashimiGroup] [])
-        gsHelp cs gr = gr <> OnlyRemainder cs
+  where gsHelp (Sashimi:Sashimi:Sashimi:cs) gr = gsHelp cs (gr <> GroupResult [SashimiGroup] [])
+        gsHelp cs gr = gr <> GroupResult [] cs
 
