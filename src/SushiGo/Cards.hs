@@ -3,7 +3,6 @@ module SushiGo.Cards (
 , Group(..)
 , GroupResult(..)
 , HandResult(..)
-, WithRemainder(..)
 , score
 , group
 , getCards
@@ -36,9 +35,10 @@ type CardsToPlay = [Card]
 -- Groups are ALWAYS full
 data Group c = SashimiGroup
              | TempuraGroup
-             | WasabiGroup { nagiri :: c }
              | DumplingGroup { totalDumplings :: Int }
              | MakiGroup { totalMaki :: Int }
+             | WasabiGroup { nagiri :: c }
+             {-| Nagiri { nPoints :: Int }-}
              | NoGroup
              deriving (Eq, Show)
 
@@ -47,26 +47,16 @@ data HandResult = HandResult {
                 , toPass :: Hand
                 } deriving (Eq, Show)
 
-class WithRemainder gr where
-  remainder :: gr -> CardsToPlay
-
 data GroupResult c = GroupResult {
-                     groups      :: [Group c]
-                   , grRemainder :: CardsToPlay
+                     groups    :: [Group c]
+                   , remainder :: CardsToPlay
                    }
-                   | NoResult
                    deriving (Eq, Show)
-
-instance WithRemainder (GroupResult c) where
-  remainder (GroupResult { grRemainder = r }) = r
-  remainder NoResult = []
 
 instance Monoid (GroupResult c) where
   mempty = GroupResult [] []
   mappend (GroupResult gsA rA)
           (GroupResult gsB rB) = GroupResult (gsA <> gsB) (rA <> rB)
-  mappend NoResult other = other
-  mappend other NoResult = other
 
 score :: [Card] -> Int
 score [Sashimi, Sashimi, Sashimi] = 10
@@ -111,6 +101,7 @@ groupDumplings cs = GroupResult dumplingGroups notDumplings
         dumplings = (takeWhile (== Dumpling) cs)
         notDumplings = (dropWhile (== Dumpling) cs)
 
+-- Maki groups have >= 1 maki; maki counts are merged
 groupMaki :: CardsToPlay -> GroupResult Card
 groupMaki cs = GroupResult makiGroups notMaki
   where makiGroups = if makiCount > 0 then [MakiGroup $ sum (map numMaki maki)] else []

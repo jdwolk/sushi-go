@@ -16,13 +16,27 @@ spec = do
         it "scores 0 points" $ do
           score [Sashimi, Sashimi] `shouldBe` 0
 
-  describe "groupSashimi" $ do
-    context "with # divisible by 3" $ do
-      it "gives a groupResult with the correct groups and no remainder" $ do
-        groupSashimi [Sashimi, Sashimi, Sashimi] `shouldBe` HasGroups [SashimiGroup] []
+  describe "group" $ do
+    describe"for sashimi" $ do
+      it "makes even groups of 3 sashimi" $ do
+        group [Sashimi, Sashimi, Sashimi] `shouldBe` GroupResult [SashimiGroup] []
+      it "adds extras to remainder" $ do
+        group [Sashimi, Sashimi, Sashimi, Sashimi] `shouldBe` GroupResult [SashimiGroup] [Sashimi]
 
+    describe "for tempura" $ do
+      it "makes even groups of 2 tempura" $ do
+        group [Tempura, Tempura] `shouldBe` GroupResult [TempuraGroup] []
+      it "adds extras to remainder" $ do
+        group [Tempura, Tempura, Tempura] `shouldBe` GroupResult [TempuraGroup] [Tempura]
 
-  {-describe "group" $ do                                                                                     -}
-  {-  context "for sashimi" $ do                                                                              -}
-  {-    it "makes even groups of 3 sashimi" $ do                                                              -}
-  {-      group [Sashimi, Sashimi, Sashimi] `shouldBe` GroupResult { groups = [SashimiGroup], remainder = [] }-}
+    describe "for dumplings" $ do
+      it "does not make a group for 0 dumplings" $ do
+        group [] `shouldBe` mempty
+      it "makes a group from one dumpling" $ do
+        group [Dumpling] `shouldBe` GroupResult [DumplingGroup 1] []
+      it "makes larger dumpling groups" $ do
+        group [Dumpling, Dumpling, Dumpling, Dumpling, Dumpling] `shouldBe` GroupResult [DumplingGroup 5] []
+      {-it "makes even groups of 2 tempura" $ do                                           -}
+      {-  group [Tempura, Tempura] `shouldBe` GroupResult [TempuraGroup] []                -}
+      {-it "adds extras to remainder" $ do                                                 -}
+      {-  group [Tempura, Tempura, Tempura] `shouldBe` GroupResult [TempuraGroup] [Tempura]-}
